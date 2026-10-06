@@ -1,0 +1,33 @@
+---
+description: Backend de pagos, base de datos, mails con QR y control de puerta (api/, lib/, netlify/, supabase/)
+globs: api/**, lib/**, netlify/**, supabase/**
+alwaysApply: false
+---
+
+# Backend
+
+## Convenciones
+- Node 20+, ES modules (`"type": "module"`).
+- Cada endpoint es `api/<nombre>.js` con `export default async function handler(req, res)`.
+  Usá `send(res, status, body)` de `lib/db.js` para responder JSON. Errores: `console.error('<nombre>', err)` y un mensaje genérico en español para el usuario.
+- **Mantené la firma `(req, res)`.** El adaptador `netlify/functions/api.mjs` depende de ella (solo usa `res.status()`, `res.setHeader()` y `res.send()`). Si agregás un endpoint nuevo, registralo también en `routes` dentro de ese adaptador.
+- Dependencias: `@supabase/supabase-js`, `mercadopago` (SDK v2), `nodemailer` y `qrcode`. No agregues otras sin acordarlo.
+
+## Flujo de compra
+1. `GET /api/config`: devuelve el catálogo activo con disponibilidad y `feePct`.
+2. `POST /api/checkout`: valida al comprador, **recalcula precios desde `products`**, revisa el cupo (`getUsage`/`remaining`), crea la orden `pending` y la preferencia de Mercado Pago con `external_reference = order.id`. El link de pago vence en `HOLD_MINUTES` (30) y se excluyen el efectivo y los cajeros (`ticket`/`atm`).
+3. `POST /api/webhook`: Mercado Pago avisa. Se consulta el pago por ID y, si está `approved` y el monto alcanza, se marca la orden, se crean los tickets (`ensureTickets`, idempotente) y se manda el mail (si `email_sent_at` es null). Si algo falla, responde 500 para que Mercado Pago reintente.
+4. `POST /api/checkin`: requiere `DOOR_PIN`. Marca el ticket como usado con un update condicional (`checked_in_at is null`) para que no se use dos veces.
+
+## Reglas
+- Todo cambio de esquema va en `supabase/schema.sql` y además hay que correrlo en el SQL Editor de Supabase: el archivo no se aplica solo. Usá `if not exists`/`on conflict` para que se pueda volver a correr sin romper nada.
+- Los montos son enteros en pesos argentinos (sin centavos).
+- El recargo es `round(subtotal × service_fee_pct / 100)` y va como ítem aparte "Aranceles de Mercado Pago".
+- El cupo cuenta las órdenes aprobadas más las pendientes de los últimos 30 minutos. `max_general` se cuenta en personas y `max_vip_boxes` en boxes. Con `null` no hay tope.
+- Los mails usan HTML con tablas y estilos inline (compatible con Gmail). Los QR van como adjuntos `cid:` porque Gmail bloquea los `data:` URI. Los datos del evento salen de `lib/event.js`; mantenelos iguales a `EVENT` en `public/app.js`.
+- Los códigos de ticket tienen el formato `SISMO-XXXXX-XXXXX`, con un alfabeto sin 0/O/1/I.
+- Variables de entorno: `SITE_URL`, `MP_ACCESS_TOKEN`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GMAIL_USER`, `GMAIL_APP_PASSWORD` y `DOOR_PIN`. **Nunca las escribas en el código.**
+
+## Cómo probar
+- Para probar sin servicios reales, llamá al adaptador con un `Request` falso (ejemplo: PIN incorrecto → 401, checkout sin datos → 400).
+- Para pagos de prueba, usá las credenciales y tarjetas de prueba de Mercado Pago. Nunca pruebes con tarjetas reales.

@@ -1,0 +1,46 @@
+---
+description: Diseño, marca, responsive y convenciones del sitio (HTML/CSS/JS en public/)
+globs: public/**
+alwaysApply: false
+---
+
+# Frontend (public/)
+
+## Stack
+- HTML, CSS y JavaScript vanilla. Sin framework ni build: lo que está en `public/` es lo que se publica.
+- `app.js` es un solo script con secciones comentadas (`// ====== ... ======`). Respetá ese orden y ese estilo: funciones chicas, helper `$()`, `money()` para precios en formato es-AR y `esc()` para todo texto que se inserte en HTML.
+- Todo acceso a `localStorage` va con try/catch (helper `store`).
+
+## Marca (sacada de las piezas oficiales de SISMO)
+- Usá **siempre las variables de `:root` en `styles.css`**. No inventes colores sueltos.
+  - Negro `--bg #050505`, superficies `--surface`/`--surface-2`, bordes `--line`.
+  - **Naranja `--orange #f46e16`**: color principal (botones, acentos, `em` de los títulos).
+  - **Verde tóxico `--toxic #3dff2a`**: secundario (eyebrows, tanda activa, VIP).
+  - **Cromo `--chrome`**: gradiente para precios y cuenta regresiva.
+- Tipografías: **Anton** para títulos (mayúsculas, condensada pesada, como la pieza "BARRA LIBRE") y **Space Grotesk** para el texto. Ambas vienen de Google Fonts.
+- Los logos e imágenes de marca están en `public/assets/`:
+  - `logo-halloween.png`: logo verde y naranja, va en el inicio.
+  - `logo-chrome-naranja.png`: va en el menú. `logo-chrome.png`: va en el pie de página.
+  - `halloween-drip.png`: la palabra "HALLOWEEN" chorreada (es la tipografía de la marca, por eso se usa como imagen).
+  - `barra-libre.png` y `manos.jpg` (fondo del inicio).
+- Botones: `.btn .btn-orange` (principal) y `.btn .btn-ghost` (secundario). El VIP usa verde.
+
+## Estilo Halloween
+- Ya existen: linterna sobre las manos en el inicio, niebla, murciélagos, cinta naranja con borde que chorrea, telarañas generadas por JS (`webSVG()`), araña colgando, títulos con parpadeo de neón y grano de película.
+- Los íconos son `<symbol>` SVG al principio de `index.html` (`#i-bat`, `#i-pumpkin`, `#i-cup`, `#i-moon`, `#i-spider`). Reutilizalos con `<use href="#...">`.
+- Toda animación nueva tiene que respetar `prefers-reduced-motion` (ver el bloque al final de `styles.css`).
+
+## Responsive (prioridad: celular)
+- La mayoría de la gente compra desde el celular. Probá cada cambio a **375 px** y a **1366 px**.
+- Puntos de corte existentes: `max-width: 900px` (tablet/celular) y `max-width: 520px` (celular chico).
+- Nada puede generar scroll horizontal (`document.documentElement.scrollWidth` igual a `innerWidth`).
+- Las imágenes llevan `width`/`height` en el HTML, y el CSS global tiene `img { height: auto }` para que no se deformen.
+- En celular, la galería es un carrusel horizontal y hay una barra fija abajo para comprar ("Desde $X" o "Ver carrito"). Tené en cuenta esa barra para que no tape contenido.
+
+## Carrito y checkout
+- El carrito se guarda en `localStorage` (`sismo-cart`) como `{ productId: cantidad }`. Los datos del comprador van en `sismo-buyer`.
+- Datos que se piden: nombre y apellido, email y DNI (7 u 8 números), más la casilla de +21 y disfraz.
+- El checkout hace `POST /api/checkout` y redirige a `init_point` de Mercado Pago. Sin backend (vista previa local) muestra un aviso y no cobra.
+
+## Fotos
+- Van optimizadas (lado largo ≤ 1400 px, JPG ~78 %) en `public/assets/fotos/`, y se listan en `GALLERY` de `app.js`. Las fotos con disfraces van primero.

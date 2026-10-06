@@ -1,0 +1,44 @@
+---
+description: Contexto general del proyecto SISMO Halloween, reglas de negocio, seguridad y forma de trabajo
+alwaysApply: true
+---
+
+# SISMO Halloween: landing + venta de entradas
+
+Landing de una fiesta barra libre (SISMO, edición Halloween) con carrito, pago con Mercado Pago,
+mail con un QR por persona y control de puerta con escáner. Leé `README.md` antes de cambios grandes.
+
+## Estructura
+- `public/`: el sitio estático, sin build ni framework. HTML + CSS + JS vanilla.
+  - `index.html`, `styles.css`, `app.js`: la landing y el carrito.
+  - `gracias.html`: vuelta de Mercado Pago. `puerta.html`: escáner del staff (pide PIN).
+  - `assets/`: logos, fondos y fotos (`assets/fotos/`).
+- `api/*.js`: backend (config, checkout, webhook, checkin). Firma estilo Vercel/Express `(req, res)`.
+- `lib/`: código compartido del backend (db, tickets, mail, datos del evento).
+- `netlify/functions/api.mjs`: adaptador para Netlify que enruta `/api/<nombre>` a `api/<nombre>.js`.
+- `supabase/schema.sql`: esquema de la base. Ya está cargado en el proyecto de Supabase.
+
+## Reglas de negocio (no cambiar sin confirmarlo con el equipo)
+- Evento: **viernes 30 de octubre de 2026**, ingreso **de 01 a 03 hs**, **+21**, disfraz obligatorio con premio al mejor disfraz. Lugar: **Frere** (link de Maps en `public/app.js` → `EVENT`).
+- Horarios siempre con "hs": "De 01:00 a 03:00 hs", "Ingreso de 01 a 03 hs".
+- Entradas (Tanda 1), precio **por persona**; el total del producto es `unit_price × persons`:
+  - General $28.000 · Pack x2 $26.000 · Pack x3 $25.000 · Pack x4 $24.000 · Pack x6 $23.000.
+  - **Box VIP de 10 personas** a $40.000 c/u ($400.000). No hay box de 12.
+- Las tarjetas muestran el precio sin recargo. **Los aranceles de Mercado Pago (12 %) los paga el comprador** y aparecen recién en el carrito, al cerrar la compra (`settings.service_fee_pct`).
+- Precios, tandas, topes de cupo, recargo y apertura de la venta viven en Supabase (`products` y `settings`), no en el código. El catálogo `FALLBACK` de `public/app.js` es solo para la vista previa local: si cambian los precios en la base, actualizalo también.
+- Un QR por persona. Cada código entra una sola vez (`tickets.checked_in_at`).
+
+## Seguridad (obligatorio)
+- **Nunca** escribas claves en el código ni en commits: `MP_ACCESS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `GMAIL_APP_PASSWORD`, `DOOR_PIN`. Van como variables de entorno del hosting. `.env` está en `.gitignore`; la lista de variables está en `.env.example`.
+- La service role de Supabase se usa **solo en el backend** (`lib/db.js`). Nunca desde `public/`.
+- El backend **recalcula siempre** precios y totales desde la base. Nunca confíes en precios que mande el navegador.
+- El webhook no confía en el aviso de Mercado Pago: vuelve a consultar el pago con el token antes de emitir entradas. Mantené eso.
+- Las tablas tienen RLS activado sin políticas públicas. No agregues políticas públicas.
+- Los datos de compradores (nombre, email, DNI) no se loguean ni se exponen en endpoints públicos.
+
+## Forma de trabajo
+- Cambios chicos y enfocados. No agregues frameworks, bundlers ni dependencias nuevas sin acordarlo.
+- Vista previa local del sitio: `npm run preview` → http://localhost:4173 (sin pagos; usa el catálogo de respaldo).
+- Antes de dar algo por terminado: probalo en el navegador **a 375 px de ancho (celular) y en escritorio**, sin scroll horizontal y sin errores en la consola.
+- Rama principal: `main`. Hacé un commit por cambio, con un mensaje en español que diga qué y por qué. Para cambios grandes, usá una rama y un pull request.
+- Los textos que ve el público van en **español rioplatense con voseo** ("comprá", "tenés", "llevá"): es una fiesta en Buenos Aires.
