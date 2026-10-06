@@ -63,6 +63,11 @@ Los cambios se ven en la página en menos de un minuto, sin volver a publicar.
 ## Reenviar un mail
 En `orders`, borrar el valor de `email_sent_at` del pedido. El mail se vuelve a mandar con el próximo aviso de Mercado Pago. Para forzarlo, en Mercado Pago → Tus integraciones → Webhooks → reenviar la notificación del pago.
 
+## Subida rápida a Netlify (solo la página, sin cobros)
+`npm run netlify:carpeta` arma la carpeta `SUBIR-A-NETLIFY/`, que se puede arrastrar a https://app.netlify.com/drop.
+Esa subida publica solo la página: las funciones de cobro no se instalan y el botón de pagar muestra un aviso.
+Para cobrar hay que conectar Netlify con GitHub (ver "Publicar en Netlify").
+
 ## Vista previa local
 `npm run preview` sirve solo la página (sin pagos) en http://localhost:4173.
 Para probar todo junto: `npm i -g netlify-cli`, crear `.env` con las variables y correr `netlify dev`.

@@ -5,7 +5,8 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "dev": "netlify dev",
-    "preview": "npx --yes serve public -l 4173"
+    "preview": "npx --yes serve public -l 4173",
+    "netlify:carpeta": "node scripts/armar-netlify.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
