@@ -35,12 +35,16 @@ Para probar sin plata real, usar primero las credenciales de prueba y las tarjet
 Con la cuenta de Gmail de SISMO: activar la verificación en 2 pasos y crear una **contraseña de aplicación** en https://myaccount.google.com/apppasswords.
 Gmail permite unos 500 mails por día, y se manda un mail por compra.
 
-### 4. Publicar en Vercel
-1. Subir esta carpeta a un repo de GitHub (o usar `npx vercel` desde la carpeta).
-2. En Vercel: Add New → Project → importar el repo. Framework: **Other**.
-3. Settings → Environment Variables: cargar las variables de `.env.example`.
-   `SITE_URL` es la URL que te da Vercel (por ejemplo `https://sismo-halloween.vercel.app`).
-4. Redeploy.
+### 4. Publicar en Netlify
+1. En Netlify: **Add new project → Import an existing project → GitHub** → elegir `sismo-halloween`.
+   La configuración se toma sola de `netlify.toml` (carpeta publicada: `public`, funciones: `netlify/functions`).
+2. **Site configuration → Environment variables**: cargar las variables de `.env.example`.
+   `SITE_URL` es la URL que te da Netlify (por ejemplo `https://sismo-halloween.netlify.app`).
+3. **Deploys → Trigger deploy → Deploy site** para que tome las variables.
+
+Cada vez que se sube un cambio a la rama `main` de GitHub, Netlify vuelve a publicar solo.
+
+El backend vive en `api/*.js`. `netlify/functions/api.mjs` es un adaptador que recibe `/api/<nombre>` y llama al archivo que corresponde.
 
 ## Operación diaria (desde Supabase → Table Editor)
 
@@ -61,4 +65,4 @@ En `orders`, borrar el valor de `email_sent_at` del pedido. El mail se vuelve a 
 
 ## Vista previa local
 `npm run preview` sirve solo la página (sin pagos) en http://localhost:4173.
-Para probar todo junto: `npm i -g vercel`, crear `.env.local` con las variables y correr `vercel dev`.
+Para probar todo junto: `npm i -g netlify-cli`, crear `.env` con las variables y correr `netlify dev`.

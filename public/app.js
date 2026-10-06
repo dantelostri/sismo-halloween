@@ -197,7 +197,7 @@ document.addEventListener('submit', async (e) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return (err.textContent = 'Revisá el email: ahí te llegan las entradas.');
   if (dni.length < 7 || dni.length > 8) return (err.textContent = 'El DNI tiene que tener 7 u 8 números.');
   if (!$('#fAdult').checked) return (err.textContent = 'Tenés que confirmar la edad y el disfraz.');
-  if (catalog.offline) return (err.textContent = 'Vista previa: el pago se activa cuando el sitio está publicado en Vercel.');
+  if (catalog.offline) return (err.textContent = 'Vista previa: el pago se activa cuando el sitio está publicado en Netlify.');
 
   const btn = $('#payBtn');
   btn.disabled = true;

@@ -1,0 +1,16 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/gracias"
+  to = "/gracias.html"
+  status = 200
+
+[[redirects]]
+  from = "/puerta"
+  to = "/puerta.html"
+  status = 200

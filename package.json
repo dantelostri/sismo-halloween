@@ -1,10 +1,10 @@
-{
+﻿{
   "name": "sismo-halloween",
   "private": true,
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {
-    "dev": "vercel dev",
+    "dev": "netlify dev",
     "preview": "npx --yes serve public -l 4173"
   },
   "dependencies": {
