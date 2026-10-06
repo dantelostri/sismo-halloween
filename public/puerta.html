@@ -1,0 +1,137 @@
+﻿<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Puerta · SISMO</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#07060a">
+  <link rel="icon" href="/assets/logo-chrome-naranja.png">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body::after { display: none; }
+    .door { max-width: 520px; margin: 0 auto; padding: 18px 16px 40px; }
+    .door header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .door header img { height: 28px; }
+    .stats { font-size: 14px; color: var(--muted); }
+    .stats b { color: var(--toxic); font-size: 18px; }
+    #reader { border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: #000; min-height: 280px; }
+    #reader video { border-radius: 16px; }
+    .result { margin-top: 14px; border-radius: 16px; padding: 22px 18px; text-align: center; display: none; }
+    .result.show { display: block; }
+    .result h2 { font-family: var(--display); font-weight: 400; font-size: 48px; margin: 0; line-height: 1; letter-spacing: .03em; }
+    .result p { margin: 8px 0 0; font-size: 16px; }
+    .result.ok { background: #0d3a08; border: 2px solid var(--toxic); color: var(--toxic); }
+    .result.ok.vip { background: #3d1a00; border-color: var(--orange); color: #fff; }
+    .result.used { background: #4a2600; border: 2px solid #ffb020; color: #ffd27a; }
+    .result.invalid { background: #4a0010; border: 2px solid var(--danger); color: #ffc2cd; }
+    .result p.small { font-size: 13px; opacity: .85; }
+    .manual { display: flex; gap: 8px; margin-top: 14px; }
+    .manual input, .login input { flex: 1; background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 12px; padding: 14px; font: inherit; font-size: 16px; text-transform: uppercase; }
+    .manual .btn, .login .btn { padding: 0 20px; font-size: 13px; }
+    .login { display: grid; gap: 12px; margin-top: 30vh; text-align: center; }
+    .login input { text-align: center; letter-spacing: .4em; }
+    .err { color: var(--danger); min-height: 1.4em; margin: 0; }
+  </style>
+</head>
+<body>
+<div class="door">
+  <header>
+    <img src="/assets/logo-chrome-naranja.png" alt="SISMO">
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <form class="login" id="login">
+    <p class="eyebrow">Control de puerta</p>
+    <input id="pin" type="password" inputmode="numeric" placeholder="PIN" autocomplete="off" required>
+    <button class="btn btn-orange">Entrar</button>
+    <p class="err" id="loginErr"></p>
+  </form>
+
+  <div id="app" hidden>
+    <div id="reader"></div>
+    <div class="result" id="result"></div>
+    <form class="manual" id="manual">
+      <input id="code" placeholder="SISMO-XXXXX-XXXXX" autocomplete="off" autocapitalize="characters">
+      <button class="btn btn-ghost">Validar</button>
+    </form>
+  </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+  const $ = (s) => document.querySelector(s);
+  let pin = '';
+  try { pin = sessionStorage.getItem('sismo-pin') || ''; } catch {}
+  let busy = false, last = '', lastAt = 0;
+
+  async function call(code) {
+    const r = await fetch('/api/checkin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, pin }) });
+    const data = await r.json().catch(() => ({}));
+    if (r.status === 401) throw Object.assign(new Error('PIN incorrecto'), { auth: true });
+    if (!r.ok) throw new Error(data.error || 'Error de conexión');
+    return data;
+  }
+
+  function showStats(s) { if (s) $('#stats').innerHTML = `Adentro <b>${s.inside}</b> / ${s.total}`; }
+
+  function show(data) {
+    const el = $('#result');
+    const t = data.ticket;
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    if (data.result === 'ok') {
+      el.className = 'result show ok' + (t.kind === 'vip' ? ' vip' : '');
+      el.innerHTML = `<h2>${t.kind === 'vip' ? 'VIP · ' : ''}PASA</h2><p>${esc(t.product)} · entrada ${t.seq} de ${t.of}</p><p class="small">Titular: ${esc(t.holder)} · DNI ${esc(t.dni)}</p>`;
+      navigator.vibrate?.(120);
+    } else if (data.result === 'used') {
+      el.className = 'result show used';
+      const at = data.at ? new Date(data.at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '';
+      el.innerHTML = `<h2>YA USADA</h2><p>Este QR ya entró${at ? ' a las ' + at : ''}.</p><p class="small">${esc(t?.product)} · titular ${esc(t?.holder)}</p>`;
+      navigator.vibrate?.([80, 60, 80, 60, 80]);
+    } else {
+      el.className = 'result show invalid';
+      el.innerHTML = `<h2>NO VÁLIDA</h2><p>El código no existe o el pago no está aprobado.</p>`;
+      navigator.vibrate?.([300]);
+    }
+    showStats(data.stats);
+  }
+
+  async function check(code) {
+    code = String(code).trim().toUpperCase();
+    if (!code || busy) return;
+    if (code === last && Date.now() - lastAt < 4000) return; // el lector lee el mismo QR varias veces seguidas
+    busy = true; last = code; lastAt = Date.now();
+    try { show(await call(code)); }
+    catch (e) {
+      if (e.auth) return logout();
+      $('#result').className = 'result show invalid';
+      $('#result').innerHTML = `<h2>ERROR</h2><p>${e.message}. Probá de nuevo.</p>`;
+    } finally { busy = false; }
+  }
+
+  function logout() { pin = ''; try { sessionStorage.removeItem('sismo-pin'); } catch {} location.reload(); }
+
+  async function start() {
+    try {
+      const data = await call('');
+      showStats(data.stats);
+    } catch (e) {
+      $('#loginErr').textContent = e.message;
+      return;
+    }
+    try { sessionStorage.setItem('sismo-pin', pin); } catch {}
+    $('#login').hidden = true;
+    $('#app').hidden = false;
+    const qr = new Html5Qrcode('reader');
+    qr.start({ facingMode: 'environment' }, { fps: 10, qrbox: (w, h) => { const s = Math.min(w, h) * 0.7; return { width: s, height: s }; } }, (text) => check(text), () => {})
+      .catch(() => { $('#reader').innerHTML = '<p style="padding:20px;color:var(--muted)">No se pudo abrir la cámara. Validá escribiendo el código abajo.</p>'; });
+    setInterval(async () => { try { showStats((await call('')).stats); } catch {} }, 30000);
+  }
+
+  $('#login').addEventListener('submit', (e) => { e.preventDefault(); pin = $('#pin').value.trim(); start(); });
+  $('#manual').addEventListener('submit', (e) => { e.preventDefault(); last = ''; check($('#code').value); $('#code').value = ''; });
+  if (pin) start();
+</script>
+</body>
+</html>

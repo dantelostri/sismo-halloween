@@ -1,0 +1,49 @@
+﻿<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compra confirmada · SISMO Halloween</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#07060a">
+  <link rel="icon" href="/assets/logo-chrome-naranja.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .thanks { min-height: 100svh; display: grid; place-items: center; text-align: center; padding: 60px 0; }
+    .thanks .hero-logo { width: min(320px, 70vw); animation: none; }
+    .thanks .h2 { margin-top: 26px; }
+    .thanks .lead { margin: 0 auto 30px; }
+    .steps { display: grid; gap: 10px; max-width: 460px; margin: 0 auto 34px; text-align: left; }
+    .steps div { display: flex; gap: 14px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+    .steps b { font-family: var(--display); font-weight: 400; color: var(--orange); font-size: 22px; line-height: 1; }
+  </style>
+</head>
+<body>
+  <main class="thanks">
+    <div class="wrap">
+      <img class="hero-logo" src="/assets/logo-halloween.png" alt="SISMO">
+      <p class="eyebrow" id="kicker" style="margin-top:24px">Pago aprobado</p>
+      <h1 class="h2" id="title">Nos vemos el <em>30.10</em>.</h1>
+      <p class="lead" id="lead">En unos minutos te llega un mail con un QR por persona.</p>
+      <div class="steps">
+        <div><b>1</b><span>Buscá el mail de <strong>SISMO</strong>. Si no aparece, revisá spam o promociones.</span></div>
+        <div><b>2</b><span>Si compraste para tu grupo, reenviale a cada uno su QR.</span></div>
+        <div><b>3</b><span>Vení disfrazado, con DNI, entre las 01:00 y las 03:00 hs.</span></div>
+      </div>
+      <a class="btn btn-ghost" href="/">Volver al inicio</a>
+    </div>
+  </main>
+  <script>
+    try { localStorage.removeItem('sismo-cart'); } catch {}
+    const status = new URLSearchParams(location.search).get('status') || new URLSearchParams(location.search).get('collection_status');
+    if (status && status !== 'approved') {
+      document.getElementById('kicker').textContent = 'Pago en proceso';
+      document.getElementById('title').innerHTML = 'Estamos <em>esperando</em> tu pago.';
+      document.getElementById('lead').textContent = 'Cuando Mercado Pago lo apruebe, te llega un mail con tus entradas. No hace falta que compres de nuevo.';
+    }
+  </script>
+</body>
+</html>
